@@ -1,5 +1,6 @@
 package com.cict.iamtracing.service;
 
+import com.cict.iamtracing.entity.AccountDetails;
 import com.cict.iamtracing.entity.KeycloakUser;
 import com.cict.iamtracing.repository.KeycloakUserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,33 @@ public class KeycloakUserService {
         }
 
         return !keycloakUsers.isEmpty() ? keycloakUsers.get(0) : null;
+    }
+
+    public List<AccountDetails> findKeycloakUsersByAccountNumber(String accountNumber) {
+        log.debug("FINDING USERS WITH ACCOUNT NUMBER: {}", accountNumber);
+        List<AccountDetails> keycloakUsers = keycloakUserRepository.findKeycloakUsersByAccountNumber(accountNumber);
+
+        if (keycloakUsers.size() > 0) {
+            log.debug("FOUND {} USER(S) with ACCOUNT NUMBER: {}", keycloakUsers.size(), accountNumber);
+        }
+
+        return !keycloakUsers.isEmpty() ? keycloakUsers : null;
+
+    }
+
+    public List<KeycloakUser> findKeycloakUserByNames(String firstName, String lastName) {
+        log.debug("FINDING USERS WITH NAMES: {} {}", firstName, lastName);
+
+        String firstNameQuery = '%' + firstName == null ? "" : firstName + '%';
+        String lastNameQuery = '%' + lastName == null ? "" : lastName + '%';
+
+        List<KeycloakUser> keycloakUsers = keycloakUserRepository.findKeycloakUserByNames(firstNameQuery, lastNameQuery);
+
+        if (keycloakUsers.size() > 0) {
+            log.debug("FOUND {} USER(S) with NAME: {} {}", keycloakUsers.size(), firstName, lastName);
+        }
+
+        return !keycloakUsers.isEmpty() ? keycloakUsers : null;
     }
 
 }
