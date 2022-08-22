@@ -2,6 +2,8 @@ package com.cict.iamtracing.service;
 
 import com.cict.iamtracing.entity.AccountDetails;
 import com.cict.iamtracing.entity.KeycloakUser;
+import com.cict.iamtracing.entity.RegisteredUsersReport;
+import com.cict.iamtracing.entity.TracingAccountInfo;
 import com.cict.iamtracing.repository.KeycloakUserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,9 +20,9 @@ public class KeycloakUserService {
     @Autowired
     private KeycloakUserRepository keycloakUserRepository;
 
-    public KeycloakUser findByUserId(String userId) {
+    public TracingAccountInfo findByUserId(String userId) {
         log.debug("FINDING USER[{}] DB:", userId);
-        List<KeycloakUser> keycloakUsers = keycloakUserRepository.findByUserId(userId);
+        List<TracingAccountInfo> keycloakUsers = keycloakUserRepository.findByUserId(userId);
 
         if (keycloakUsers.size() > 0) {
             log.debug("FOUND USER with ID: {}", userId);
@@ -41,13 +43,13 @@ public class KeycloakUserService {
 
     }
 
-    public List<KeycloakUser> findKeycloakUserByNames(String firstName, String lastName) {
+    public List<TracingAccountInfo> findKeycloakUserByNames(String firstName, String lastName) {
         log.debug("FINDING USERS WITH NAMES: {} {}", firstName, lastName);
 
         String firstNameQuery = '%' + firstName == null ? "" : firstName + '%';
         String lastNameQuery = '%' + lastName == null ? "" : lastName + '%';
 
-        List<KeycloakUser> keycloakUsers = keycloakUserRepository.findKeycloakUserByNames(firstNameQuery, lastNameQuery);
+        List<TracingAccountInfo> keycloakUsers = keycloakUserRepository.findKeycloakUserByNames(firstNameQuery, lastNameQuery);
 
         if (keycloakUsers.size() > 0) {
             log.debug("FOUND {} USER(S) with NAME: {} {}", keycloakUsers.size(), firstName, lastName);
@@ -55,5 +57,18 @@ public class KeycloakUserService {
 
         return !keycloakUsers.isEmpty() ? keycloakUsers : null;
     }
+
+    public List<RegisteredUsersReport> getRegisteredUsersBetween(String fromDate, String toDate) {
+        log.debug("FINDING REGISTERED USERS BETWEEN: {} and {}", fromDate, toDate);
+
+        List<RegisteredUsersReport> registerUsers = keycloakUserRepository.findRegisteredUsersBetween(fromDate, toDate);
+
+        if (registerUsers.size() > 0) {
+            log.debug("FOUND {} REGISTERED USER(S) with from {} to {}", registerUsers.size(), fromDate, toDate);
+        }
+
+        return !registerUsers.isEmpty() ? registerUsers : null;
+    }
+
 
 }

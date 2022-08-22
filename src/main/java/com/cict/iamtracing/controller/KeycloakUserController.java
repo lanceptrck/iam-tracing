@@ -2,6 +2,7 @@ package com.cict.iamtracing.controller;
 
 import com.cict.iamtracing.entity.AccountDetails;
 import com.cict.iamtracing.entity.KeycloakUser;
+import com.cict.iamtracing.entity.TracingAccountInfo;
 import com.cict.iamtracing.response.GenericResponse;
 import com.cict.iamtracing.service.KeycloakUserService;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,7 @@ public class KeycloakUserController {
                                       @RequestParam(required = false) String lastName) {
         try {
             if (operation.equalsIgnoreCase("userid") && userId != null) {
-                KeycloakUser keycloakUser = keycloakUserService.findByUserId(userId);
+                TracingAccountInfo keycloakUser = keycloakUserService.findByUserId(userId);
                 if (keycloakUser != null) {
                     return ResponseEntity.ok(
                             constructResponse(keycloakUser,
@@ -50,7 +51,7 @@ public class KeycloakUserController {
                             "User(s) with given identifier not found.", false), HttpStatus.NOT_FOUND);
                 }
             } else if(operation.equalsIgnoreCase("name") && (firstName != null || lastName != null)){
-                List<KeycloakUser> keycloakUsers = keycloakUserService.findKeycloakUserByNames(firstName, lastName);
+                List<TracingAccountInfo> keycloakUsers = keycloakUserService.findKeycloakUserByNames(firstName, lastName);
 
                 if (keycloakUsers != null) {
                     return ResponseEntity.ok(constructResponse(keycloakUsers, "Successfully fetched user(s)", true));

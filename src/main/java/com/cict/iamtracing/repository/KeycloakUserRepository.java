@@ -2,6 +2,8 @@ package com.cict.iamtracing.repository;
 
 import com.cict.iamtracing.entity.AccountDetails;
 import com.cict.iamtracing.entity.KeycloakUser;
+import com.cict.iamtracing.entity.RegisteredUsersReport;
+import com.cict.iamtracing.entity.TracingAccountInfo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +14,7 @@ import java.util.List;
 @Repository
 public interface KeycloakUserRepository extends JpaRepository<KeycloakUser, String> {
 
-    List<KeycloakUser> findByUserId(String userId);
+    List<TracingAccountInfo> findByUserId(String userId);
 
     @Query(value = "SELECT \n" +
             "    ue.ID as 'id',\n" +
@@ -22,7 +24,7 @@ public interface KeycloakUserRepository extends JpaRepository<KeycloakUser, Stri
             "    ua.VALUE AS 'accountNumber'\n" +
             "FROM\n" +
             "    USER_ENTITY ue\n" +
-            "        INNER JOIN\n" +
+            "        LEFT JOIN\n" +
             "    USER_ATTRIBUTE ua ON ue.ID = ua.USER_ID\n" +
             "WHERE\n" +
             "    ua.NAME = 'accountNumber'\n" +
@@ -30,12 +32,38 @@ public interface KeycloakUserRepository extends JpaRepository<KeycloakUser, Stri
     List<AccountDetails> findKeycloakUsersByAccountNumber(@Param("accountNumber") String accountNumber);
 
     @Query(value = "SELECT \n" +
-            "    *\n" +
+            "    u.ID as 'userId',\n" +
+            "    u.FIRST_NAME as 'firstName',\n" +
+            "    u.LAST_NAME as 'lastName',\n" +
+            "    u.EMAIL as 'email'\n" +
             "FROM\n" +
-            "    keycloak.USER_ENTITY\n" +
+            "    keycloak.USER_ENTITY u\n" +
             "WHERE\n" +
             "    FIRST_NAME LIKE :firstName\n" +
             "        AND LAST_NAME LIKE :lastName\n", nativeQuery = true)
-    List<KeycloakUser> findKeycloakUserByNames(@Param("firstName") String firstName, @Param("lastName") String lastName);
+    List<TracingAccountInfo> findKeycloakUserByNames(@Param("firstName") String firstName, @Param("lastName") String lastName);
+
+    @Query(value = "SELECT \n" +
+            "    u.FIRST_NAME as 'firstName',\n" +
+            "    u.LAST_NAME as 'lastName',\n" +
+            "    u.EMAIL as 'email',\n" +
+            "    ua.VALUE AS 'accountNumber',\n" +
+            "    ee.CLIENT_ID AS 'client',\n" +
+            "    DATE_FORMAT(FROM_UNIXTIME(ee.EVENT_TIME * POWER(10, 9 - FLOOR(LOG10(ee.EVENT_TIME)))),\n" +
+            "            '%m/%d/%Y') AS 'registeredDate',\n" +
+            "    DATE_FORMAT(FROM_UNIXTIME(ee.EVENT_TIME * POWER(10, 9 - FLOOR(LOG10(ee.EVENT_TIME)))),\n" +
+            "            '%H:%i') AS 'registeredTime'\n" +
+            "FROM\n" +
+            "    keycloak.USER_ENTITY u\n" +
+            "        LEFT JOIN\n" +
+            "    keycloak.EVENT_ENTITY ee ON u.ID = ee.USER_ID\n" +
+            "        LEFT JOIN\n" +
+            "    keycloak.USER_ATTRIBUTE ua ON u.ID = ua.USER_ID\n" +
+            "WHERE\n" +
+            "    ee.TYPE = 'REGISTER'\n" +
+            "        AND ee.EVENT_TIME BETWEEN (SELECT ROUND(UNIX_TIMESTAMP(TIMESTAMP( :fromDate )) * 1000)) AND (SELECT ROUND(UNIX_TIMESTAMP(TIMESTAMP( :toDate )) * 1000)) \n" +
+            "        AND ua.NAME = 'accountNumber'\n" +
+            "ORDER BY ee.EVENT_TIME desc", nativeQuery = true)
+    List<RegisteredUsersReport> findRegisteredUsersBetween(@Param("fromDate") String fromDate, @Param("toDate") String toDate);
 
 }

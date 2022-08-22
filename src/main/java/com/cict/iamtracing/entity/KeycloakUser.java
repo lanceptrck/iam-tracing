@@ -1,13 +1,14 @@
 package com.cict.iamtracing.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.apache.catalina.User;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.util.List;
 
 @Getter
 @Setter
@@ -28,5 +29,18 @@ public class KeycloakUser {
 
     @Column(name = "LAST_NAME")
     private String lastName;
+
+    @OneToMany(mappedBy = "keycloakUser", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties({"keycloakUser"})
+    private List<EventEntity> events;
+
+    @OneToMany(mappedBy = "keycloakUser", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties({"keycloakUser"})
+    private List<UserAttribute> attributes;
+
+    @JsonIgnore
+    private List<EventEntity> getEvents() {
+        return events;
+    }
 
 }

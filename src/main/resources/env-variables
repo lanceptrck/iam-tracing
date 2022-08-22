@@ -1,0 +1,6 @@
+==== DEV ====
+DB_HOST=172.31.83.210;
+DB_PORT=3306;
+DB_USERNAME=devops3;
+DB_PASSWORD=Default123!@#;
+DB_NAME=keycloak
