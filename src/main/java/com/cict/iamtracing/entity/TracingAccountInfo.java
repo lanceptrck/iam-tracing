@@ -1,5 +1,7 @@
 package com.cict.iamtracing.entity;
 
+import java.util.List;
+
 public interface TracingAccountInfo {
 
     String getUserId();
@@ -9,4 +11,8 @@ public interface TracingAccountInfo {
     String getFirstName();
 
     String getLastName();
+
+    List<UserAttribute> getAttributes();
+
+    Boolean getEnabled();
 }

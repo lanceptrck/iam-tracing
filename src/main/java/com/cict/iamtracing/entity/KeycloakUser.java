@@ -30,12 +30,17 @@ public class KeycloakUser {
     @Column(name = "LAST_NAME")
     private String lastName;
 
+    @Column(name = "ENABLED")
+    private Boolean enabled;
+
     @OneToMany(mappedBy = "keycloakUser", cascade = CascadeType.ALL)
     @JsonIgnoreProperties({"keycloakUser"})
+    @JsonIgnore
     private List<EventEntity> events;
 
     @OneToMany(mappedBy = "keycloakUser", cascade = CascadeType.ALL)
     @JsonIgnoreProperties({"keycloakUser"})
+    @JsonIgnore
     private List<UserAttribute> attributes;
 
     @JsonIgnore

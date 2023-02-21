@@ -29,7 +29,8 @@ public class KeycloakUserController {
                                       @RequestParam(required = false) String userId,
                                       @RequestParam(required = false) String accountNumber,
                                       @RequestParam(required = false) String firstName,
-                                      @RequestParam(required = false) String lastName) {
+                                      @RequestParam(required = false) String lastName,
+                                      @RequestParam(required = false) String email) {
         try {
             if (operation.equalsIgnoreCase("userid") && userId != null) {
                 TracingAccountInfo keycloakUser = keycloakUserService.findByUserId(userId);
@@ -60,6 +61,14 @@ public class KeycloakUserController {
                             "User(s) with given identifier not found.", false), HttpStatus.NOT_FOUND);
                 }
 
+            } else if(operation.equalsIgnoreCase("email") && email != null){
+                List<TracingAccountInfo> keycloakUser = keycloakUserService.findByEmail(email);
+                if (keycloakUser != null) {
+                    return ResponseEntity.ok(constructResponse(keycloakUser, "Successfully fetched user(s)", true));
+                } else {
+                    return new ResponseEntity<>(constructResponse(null,
+                            "User(s) with given identifier not found.", false), HttpStatus.NOT_FOUND);
+                }
             }
             else {
                 return ResponseEntity.badRequest().body(constructResponse(null,

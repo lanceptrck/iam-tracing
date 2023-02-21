@@ -1,9 +1,6 @@
 package com.cict.iamtracing.repository;
 
-import com.cict.iamtracing.entity.AccountDetails;
-import com.cict.iamtracing.entity.KeycloakUser;
-import com.cict.iamtracing.entity.RegisteredUsersReport;
-import com.cict.iamtracing.entity.TracingAccountInfo;
+import com.cict.iamtracing.entity.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +12,8 @@ import java.util.List;
 public interface KeycloakUserRepository extends JpaRepository<KeycloakUser, String> {
 
     List<TracingAccountInfo> findByUserId(String userId);
+
+    List<TracingAccountInfo> findTracingInfoByEmail(String email);
 
     @Query(value = "SELECT \n" +
             "    ue.ID as 'id',\n" +
@@ -35,7 +34,8 @@ public interface KeycloakUserRepository extends JpaRepository<KeycloakUser, Stri
             "    u.ID as 'userId',\n" +
             "    u.FIRST_NAME as 'firstName',\n" +
             "    u.LAST_NAME as 'lastName',\n" +
-            "    u.EMAIL as 'email'\n" +
+            "    u.EMAIL as 'email',\n" +
+            "    u.ENABLED as 'enabled'\n" +
             "FROM\n" +
             "    keycloak.USER_ENTITY u\n" +
             "WHERE\n" +
@@ -65,5 +65,69 @@ public interface KeycloakUserRepository extends JpaRepository<KeycloakUser, Stri
             "        AND ua.NAME = 'accountNumber'\n" +
             "ORDER BY ee.EVENT_TIME desc", nativeQuery = true)
     List<RegisteredUsersReport> findRegisteredUsersBetween(@Param("fromDate") String fromDate, @Param("toDate") String toDate);
+
+    @Query(value = "SELECT \n" +
+            "    u.EMAIL AS 'email',\n" +
+            "    u.ID AS 'userId',\n" +
+            "    COUNT(*) AS 'loginCount'\n" +
+            "FROM\n" +
+            "    keycloak.USER_ENTITY u\n" +
+            "        INNER JOIN\n" +
+            "    keycloak.EVENT_ENTITY ee ON u.ID = ee.USER_ID\n" +
+            "WHERE\n" +
+            "    ee.TYPE = 'CODE_TO_TOKEN'\n" +
+            "        AND ee.EVENT_TIME BETWEEN ROUND(UNIX_TIMESTAMP(TIMESTAMP( :fromDate )) * 1000) AND  ROUND(UNIX_TIMESTAMP(TIMESTAMP( :toDate )) * 1000)\n" +
+            "GROUP BY u.EMAIL , u.ID\n" +
+            "ORDER BY loginCount DESC;", nativeQuery = true)
+    List<LoginReport> findLoginCountByUsers(@Param("fromDate") String fromDate, @Param("toDate") String toDate);
+
+    @Query(value = "SELECT \n" +
+            "    kg.name AS 'GROUP'\n" +
+            "FROM\n" +
+            "    USER_ENTITY ue\n" +
+            "        LEFT JOIN\n" +
+            "    USER_GROUP_MEMBERSHIP ugm ON ue.ID = ugm.USER_ID\n" +
+            "        LEFT JOIN\n" +
+            "    KEYCLOAK_GROUP kg ON kg.ID = ugm.GROUP_ID\n" +
+            "        LEFT JOIN\n" +
+            "    REALM r ON r.ID = ue.REALM_ID\n" +
+            "WHERE\n" +
+            "    ue.EMAIL = :email \n" +
+            "        AND r.NAME = 'Converge'", nativeQuery = true)
+    TracingAccountInfo findGroupByEmail(@Param("email") String email);
+
+    @Query(value = "SELECT \n" +
+            "    ue.*\n" +
+            "FROM\n" +
+            "    USER_ENTITY ue\n" +
+            "        LEFT JOIN\n" +
+            "    USER_GROUP_MEMBERSHIP ugm ON ue.ID = ugm.USER_ID\n" +
+            "        LEFT JOIN\n" +
+            "    KEYCLOAK_GROUP kg ON kg.ID = ugm.GROUP_ID\n" +
+            "        LEFT JOIN\n" +
+            "    REALM r ON r.ID = ue.REALM_ID\n" +
+            "WHERE\n" +
+            "    ue.EMAIL = :email \n" +
+            "        AND r.NAME = 'Converge';", nativeQuery = true)
+    KeycloakUser findByEmail(@Param("email") String email);
+
+    @Query(value = "SELECT \n" +
+            "    ue.*\n" +
+            "FROM\n" +
+            "    USER_ENTITY ue\n" +
+            "        LEFT JOIN\n" +
+            "    USER_GROUP_MEMBERSHIP ugm ON ue.ID = ugm.USER_ID\n" +
+            "        LEFT JOIN\n" +
+            "    KEYCLOAK_GROUP kg ON kg.ID = ugm.GROUP_ID\n" +
+            "        LEFT JOIN\n" +
+            "    REALM r ON r.ID = ue.REALM_ID\n" +
+            "WHERE\n" +
+            "    ue.EMAIL in :emails \n" +
+            "        AND r.NAME = 'Converge';", nativeQuery = true)
+    List<KeycloakUser> findByEmails(@Param("emails") List<String> emails);
+
+
+
+
 
 }

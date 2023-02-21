@@ -1,17 +1,20 @@
 package com.cict.iamtracing.service;
 
-import com.cict.iamtracing.entity.AccountDetails;
-import com.cict.iamtracing.entity.KeycloakUser;
-import com.cict.iamtracing.entity.RegisteredUsersReport;
-import com.cict.iamtracing.entity.TracingAccountInfo;
+import com.cict.iamtracing.entity.*;
 import com.cict.iamtracing.repository.KeycloakUserRepository;
 import lombok.extern.slf4j.Slf4j;
+import lombok.var;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 @Slf4j
@@ -19,6 +22,49 @@ public class KeycloakUserService {
 
     @Autowired
     private KeycloakUserRepository keycloakUserRepository;
+
+    public void deactivateUser(String email){
+        log.debug("DEACTIVATING USER: {}", email);
+
+        KeycloakUser keycloakUser = keycloakUserRepository.findByEmail(email);
+
+        if(keycloakUser != null){
+            keycloakUser.setEnabled(false);
+            keycloakUser = keycloakUserRepository.save(keycloakUser);
+            log.debug("DEACTIVATED USER: {}-{}", keycloakUser.getEmail());
+        } else {
+            log.debug("USER NOT FOUND");
+        }
+
+    }
+
+    @Async("processExecutor")
+    public void deactivateUsers(List<String> emails){
+
+/*        List<KeycloakUser> keycloakUsers = keycloakUserRepository.findByEmails(emails);
+
+        if(keycloakUsers != null && !keycloakUsers.isEmpty()){
+            for(KeycloakUser user : keycloakUsers){
+                user.setEnabled(false);
+                user = keycloakUserRepository.save(user);
+                log.debug("DEACTIVATED USER - {} ? enabled {}", user.getEmail(), user.getEnabled());
+            }
+        }*/
+
+     emails.forEach(email -> {
+            KeycloakUser keycloakUser = keycloakUserRepository.findByEmail(email);
+
+            if(keycloakUser != null){
+                keycloakUser.setEnabled(false);
+                keycloakUser = keycloakUserRepository.save(keycloakUser);
+                log.debug("DEACTIVATED USER - {} ? enabled {}", keycloakUser.getEmail(), keycloakUser.getEnabled());
+            } else {
+                log.debug("USER {} NOT FOUND", email);
+            }
+
+        });
+
+    }
 
     public TracingAccountInfo findByUserId(String userId) {
         log.debug("FINDING USER[{}] DB:", userId);
@@ -29,6 +75,17 @@ public class KeycloakUserService {
         }
 
         return !keycloakUsers.isEmpty() ? keycloakUsers.get(0) : null;
+    }
+
+    public List<TracingAccountInfo> findByEmail(String email){
+        log.debug("FINDING USER[{}]: ", email);
+        List<TracingAccountInfo> keycloakUsers = keycloakUserRepository.findTracingInfoByEmail(email);
+
+        if (keycloakUsers.size() > 0) {
+            log.debug("FOUND {} USER(S) with EMAIL: {}", keycloakUsers.size(), email);
+        }
+
+        return !keycloakUsers.isEmpty() ? keycloakUsers : null;
     }
 
     public List<AccountDetails> findKeycloakUsersByAccountNumber(String accountNumber) {
@@ -68,6 +125,19 @@ public class KeycloakUserService {
         }
 
         return !registerUsers.isEmpty() ? registerUsers : null;
+    }
+
+    public List<LoginReport> getLoginReportsBetween(String fromDate, String toDate){
+        log.debug("FINDING LOGGED IN USERS DATE BETWEEN: {} and {}", fromDate, toDate);
+
+        List<LoginReport> loginReports = keycloakUserRepository.findLoginCountByUsers(fromDate, toDate);
+
+        if(loginReports.size() > 0 && !loginReports.isEmpty()) {
+            log.debug("RETRIEVED LOGGED IN USERS DATA");
+            return loginReports.size() >= 10 ? loginReports.subList(0, 10) : loginReports;
+        }
+
+        return !loginReports.isEmpty() ? loginReports : null;
     }
 
 
