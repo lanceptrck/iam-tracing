@@ -14,5 +14,7 @@ public interface TracingAccountInfo {
 
     List<UserAttribute> getAttributes();
 
+    List<UserGroupMembership> getUserGroupMemberships();
+
     Boolean getEnabled();
 }

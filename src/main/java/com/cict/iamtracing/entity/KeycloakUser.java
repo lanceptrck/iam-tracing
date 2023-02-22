@@ -43,6 +43,11 @@ public class KeycloakUser {
     @JsonIgnore
     private List<UserAttribute> attributes;
 
+    @OneToMany(mappedBy = "keycloakUser", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties({"keycloakUser"})
+    @JsonIgnore
+    private List<UserGroupMembership> userGroupMemberships;
+
     @JsonIgnore
     private List<EventEntity> getEvents() {
         return events;
